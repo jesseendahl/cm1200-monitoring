@@ -63,6 +63,23 @@ services:
     networks:
       - monitoring
 
+  unifi-poller:
+    image: golift/unifi-poller:latest
+    container_name: unifi-poller
+    restart: unless-stopped
+    ports:
+      - "9130:9130"
+    environment:
+      - UP_UNIFI_DEFAULT_URL=https://192.168.1.1  # Change to your UDM-SE IP
+      - UP_UNIFI_DEFAULT_USER=unifipoller          # Create this local user on UDM
+      - UP_UNIFI_DEFAULT_PASS=unifipoller          # Set password on UDM
+      - UP_UNIFI_DEFAULT_VERIFY_SSL=false          # UDM uses self-signed cert
+      - UP_INFLUXDB_DISABLE=true                   # We're using Prometheus, not InfluxDB
+      - UP_PROMETHEUS_DISABLE=false
+      - UP_PROMETHEUS_NAMESPACE=unifi
+    networks:
+      - monitoring
+
 volumes:
   prometheus_data:
   grafana_data:

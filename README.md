@@ -1,9 +1,10 @@
 # CM1200 Modem Monitor Stack
 
-Prometheus + Grafana monitoring stack for Netgear CM1200 on Spectrum, deployed via Portainer.
+Prometheus + Grafana monitoring stack for Netgear CM1200 on Spectrum + UniFi UDM-SE, deployed via Portainer.
 
 ## What This Monitors
 
+### Cable Modem (CM1200)
 - **Downstream SNR** per channel (target: 33+ dB for QAM256)
 - **Downstream power** per channel (target: -7 to +7 dBmV)
 - **Upstream power** per channel (target: 35–51 dBmV)
@@ -11,6 +12,13 @@ Prometheus + Grafana monitoring stack for Netgear CM1200 on Spectrum, deployed v
 - **Ping latency** over time
 - **Modem reachability** (ping + HTTP to 192.168.100.1)
 - **Correlation view** overlaying SNR dips with packet loss events
+
+### UniFi Network (UDM-SE)
+- **WAN uptime/downtime events** (correlates with modem issues)
+- **WAN IP changes** (Spectrum DHCP lease renewals)
+- **Device connectivity state** (clients disconnecting during outages)
+- **Traffic stats** (bandwidth usage patterns)
+- **Anomaly detection events** from UniFi controller
 
 ## Deploying in Portainer
 
@@ -48,6 +56,28 @@ docker compose up -d --build
 ### Modem password
 
 If you've changed the CM1200 admin password from the default, update the `MODEM_PASSWORD` environment variable in `docker-compose.yml`.
+
+### UniFi Poller (UDM-SE integration)
+
+UniFi Poller requires a local user account on your UDM-SE:
+
+1. **Create a local user on UDM-SE**:
+   - Go to UniFi Network → Settings → Users → Add Local User
+   - Username: `unifipoller`
+   - Password: `unifipoller` (or choose your own)
+   - Role: **Read Only** (recommended) or **Limited Admin**
+
+2. **Update docker-compose.yml** with your UDM IP and credentials:
+   ```yaml
+   - UP_UNIFI_DEFAULT_URL=https://192.168.1.1  # Your UDM-SE IP
+   - UP_UNIFI_DEFAULT_USER=unifipoller
+   - UP_UNIFI_DEFAULT_PASS=unifipoller
+   ```
+
+3. **Import UniFi Dashboards** (optional but recommended):
+   - After Grafana starts, go to Dashboards → Import
+   - Use dashboard IDs: **11315** (Client Insights), **11311** (Network Sites), **11314** (USW Insights)
+   - These provide detailed UniFi metrics alongside the modem correlation dashboard
 
 ### Metric names
 

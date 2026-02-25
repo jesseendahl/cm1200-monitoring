@@ -59,3 +59,11 @@ scrape_configs:
   - job_name: "blackbox"
     static_configs:
       - targets: ["blackbox-exporter:9115"]
+
+  # UniFi Poller - UDM/network metrics (WAN events, device connectivity)
+  - job_name: "unifi_poller"
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["unifi-poller:9130"]
+        labels:
+          unifi_site: "default"
