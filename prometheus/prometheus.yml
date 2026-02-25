@@ -1,0 +1,61 @@
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+rule_files:
+  - "alerts.yml"
+
+scrape_configs:
+  # Netgear CM1200 modem metrics (SNR, power, channels)
+  - job_name: "netgear_modem"
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["netgear-exporter:8000"]
+        labels:
+          instance: "cm1200"
+
+  # ICMP ping probes for packet loss & latency correlation
+  # Probes multiple targets to distinguish modem vs ISP vs internet issues
+  - job_name: "icmp_probes"
+    scrape_interval: 15s
+    metrics_path: /probe
+    params:
+      module: [icmp]
+    static_configs:
+      - targets:
+          - 192.168.100.1      # Your modem (baseline - should always work)
+          - 1.1.1.1             # Cloudflare DNS
+          - 8.8.8.8             # Google DNS
+        labels:
+          probe_type: "icmp"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # HTTP probe against modem web UI (catches modem hangs)
+  - job_name: "modem_http_probe"
+    scrape_interval: 30s
+    metrics_path: /probe
+    params:
+      module: [http_modem]
+    static_configs:
+      - targets:
+          - http://192.168.100.1
+        labels:
+          probe_type: "http"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Blackbox exporter's own metrics
+  - job_name: "blackbox"
+    static_configs:
+      - targets: ["blackbox-exporter:9115"]

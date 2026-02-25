@@ -1,0 +1,325 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "🔴 Connectivity & Packet Loss",
+      "type": "row"
+    },
+    {
+      "title": "Probe Status",
+      "description": "1 = reachable, 0 = unreachable",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 1 },
+      "id": 1,
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "expr": "probe_success{job=\"icmp_probes\"}",
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Ping Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 1 },
+      "id": 2,
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "pointSize": 5, "showPoints": "auto" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 100 }] }
+        }
+      },
+      "options": { "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "expr": "probe_duration_seconds{job=\"icmp_probes\"} * 1000",
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Packet Loss Events (probe failures over time)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 5 },
+      "id": 3,
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "lineWidth": 0 },
+          "color": { "mode": "fixed", "fixedColor": "red" },
+          "max": 1
+        }
+      },
+      "targets": [
+        {
+          "expr": "1 - probe_success{job=\"icmp_probes\", instance!=\"192.168.100.1\"}",
+          "legendFormat": "loss → {{ instance }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "id": 101,
+      "title": "📡 Downstream Channels",
+      "type": "row"
+    },
+    {
+      "title": "Downstream SNR (dB) — All Channels",
+      "description": "Target: 33+ dB for QAM256. Below 30 dB expect errors.",
+      "type": "timeseries",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 14 },
+      "id": 10,
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dB",
+          "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 5, "pointSize": 3, "showPoints": "auto" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 30 },
+              { "color": "yellow", "value": 33 },
+              { "color": "green", "value": 36 }
+            ]
+          },
+          "custom.thresholdsStyle": { "mode": "line" },
+          "min": 20,
+          "max": 45
+        }
+      },
+      "options": { "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "expr": "netgear_downstream_snr",
+          "legendFormat": "Ch {{ channel }} ({{ frequency }})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Downstream Power (dBmV) — All Channels",
+      "description": "Target: -7 to +7 dBmV",
+      "type": "timeseries",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 24 },
+      "id": 11,
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dBmV",
+          "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 5 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": -7 },
+              { "color": "green", "value": -3 },
+              { "color": "green", "value": 3 },
+              { "color": "yellow", "value": 7 },
+              { "color": "red", "value": 10 }
+            ]
+          },
+          "min": -15,
+          "max": 15
+        }
+      },
+      "options": { "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "expr": "netgear_downstream_power",
+          "legendFormat": "Ch {{ channel }} ({{ frequency }})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 34 },
+      "id": 102,
+      "title": "📤 Upstream Channels",
+      "type": "row"
+    },
+    {
+      "title": "Upstream Power (dBmV) — All Channels",
+      "description": "Target: 35-51 dBmV. Above 51 indicates line problems.",
+      "type": "timeseries",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 35 },
+      "id": 20,
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dBmV",
+          "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 5 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 35 },
+              { "color": "green", "value": 38 },
+              { "color": "green", "value": 48 },
+              { "color": "yellow", "value": 51 },
+              { "color": "red", "value": 54 }
+            ]
+          },
+          "min": 30,
+          "max": 60
+        }
+      },
+      "options": { "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "expr": "netgear_upstream_power",
+          "legendFormat": "Ch {{ channel }} ({{ frequency }})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 45 },
+      "id": 103,
+      "title": "🔗 SNR ↔ Packet Loss Correlation",
+      "type": "row"
+    },
+    {
+      "title": "SNR vs Packet Loss Correlation",
+      "description": "Overlay: SNR on left axis, packet loss events on right axis. Look for SNR dips coinciding with red loss bars.",
+      "type": "timeseries",
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 46 },
+      "id": 30,
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byRegexp", "options": "^SNR" },
+            "properties": [
+              { "id": "custom.axisPlacement", "value": "left" },
+              { "id": "unit", "value": "dB" },
+              { "id": "custom.drawStyle", "value": "line" },
+              { "id": "custom.fillOpacity", "value": 5 },
+              { "id": "custom.lineWidth", "value": 1 }
+            ]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "^LOSS" },
+            "properties": [
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "custom.drawStyle", "value": "bars" },
+              { "id": "custom.fillOpacity", "value": 80 },
+              { "id": "custom.lineWidth", "value": 0 },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } },
+              { "id": "max", "value": 1 }
+            ]
+          }
+        ]
+      },
+      "options": { "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "expr": "avg(netgear_downstream_snr)",
+          "legendFormat": "SNR avg (all channels)",
+          "refId": "A"
+        },
+        {
+          "expr": "min(netgear_downstream_snr)",
+          "legendFormat": "SNR min (worst channel)",
+          "refId": "B"
+        },
+        {
+          "expr": "1 - probe_success{job=\"icmp_probes\", instance=\"1.1.1.1\"}",
+          "legendFormat": "LOSS → 1.1.1.1",
+          "refId": "C"
+        },
+        {
+          "expr": "1 - probe_success{job=\"icmp_probes\", instance=\"8.8.8.8\"}",
+          "legendFormat": "LOSS → 8.8.8.8",
+          "refId": "D"
+        }
+      ]
+    },
+    {
+      "title": "Modem Info",
+      "type": "table",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 58 },
+      "id": 40,
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "netgear_modem_info",
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "Value": true, "__name__": true, "job": true, "instance": true }
+          }
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "Prometheus", "value": "Prometheus" },
+        "hide": 0,
+        "includeAll": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {
+    "refresh_intervals": ["15s", "30s", "1m", "5m", "15m"],
+    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+  },
+  "timezone": "browser",
+  "title": "CM1200 Modem & Packet Loss Monitor",
+  "uid": "cm1200-monitor",
+  "version": 1
+}

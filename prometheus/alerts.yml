@@ -1,0 +1,72 @@
+groups:
+  - name: modem_alerts
+    rules:
+      # SNR dropping below safe threshold for QAM256
+      - alert: DownstreamSNRLow
+        expr: netgear_downstream_snr < 33
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Downstream SNR below 33 dB on channel {{ $labels.channel }}"
+          description: "SNR is {{ $value }} dB. QAM256 requires 33+ dB for reliable operation."
+
+      # SNR critically low
+      - alert: DownstreamSNRCritical
+        expr: netgear_downstream_snr < 30
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Downstream SNR critically low on channel {{ $labels.channel }}"
+          description: "SNR is {{ $value }} dB. Expect uncorrectable errors and packet loss."
+
+      # Downstream power out of spec
+      - alert: DownstreamPowerOutOfSpec
+        expr: netgear_downstream_power > 7 or netgear_downstream_power < -7
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Downstream power out of spec on channel {{ $labels.channel }}"
+          description: "Power is {{ $value }} dBmV. Should be between -7 and +7 dBmV."
+
+      # Upstream power too high (modem struggling to reach CMTS)
+      - alert: UpstreamPowerHigh
+        expr: netgear_upstream_power > 51
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Upstream power too high on channel {{ $labels.channel }}"
+          description: "Power is {{ $value }} dBmV. Above 51 dBmV indicates line issues."
+
+      # Packet loss to external targets
+      - alert: PacketLoss
+        expr: probe_success{job="icmp_probes", instance!="192.168.100.1"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ICMP probe failing to {{ $labels.instance }}"
+          description: "Cannot reach {{ $labels.instance }}. Check modem SNR/power graphs for correlation."
+
+      # Modem itself unreachable
+      - alert: ModemUnreachable
+        expr: probe_success{job="icmp_probes", instance="192.168.100.1"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Cable modem unreachable"
+          description: "Cannot ping 192.168.100.1. Modem may have crashed or rebooted."
+
+      # High latency to external (jitter/congestion)
+      - alert: HighLatency
+        expr: probe_duration_seconds{job="icmp_probes", instance!="192.168.100.1"} > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency to {{ $labels.instance }}"
+          description: "Latency is {{ $value }}s. May indicate congestion or signal issues."
